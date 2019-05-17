@@ -41,6 +41,6 @@ Based on our results, we see that while the first few predictions were close, th
 We also do not see a significant improvement in predictions after including wind speed in the model. This may be because temperature predictions require more parameters than just wind speed.
 
 ## References
-1. Brockwell,  Peter  J.  and  Davis,  Richard  A.  (1991),  Introduction  to  Time  Series  andForecasting, Springer-Verlag, New York
+1. Brockwell,  Peter  J.  and  Davis,  Richard  A.  (1991),  Introduction  to  Time  Series and Forecasting, Springer-Verlag, New York
 2. Shumway, Robert H., Stoffer, David S. (2006), Time Series Analysis and Its Applications (with R examples), Springer-Verlag, New York
 3. Climate Data Online, NOAA, Department of Commerce 
