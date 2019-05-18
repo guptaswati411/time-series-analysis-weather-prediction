@@ -1,23 +1,8 @@
----
-title: "Time series"
-author: "Swati Gupta"
-date: "4/27/2019"
-output: html_document
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
-```{r cars}
 rm(list=ls())
 library(forecast)
 library(vars)
 data = read.csv("datanew.csv",header=T)
-```
 
-```{r}
 temp.ts = ts(as.numeric(data$temperature),start=c(2014),frequency=365.25)
 wind.ts = ts(as.numeric(data$wind_speed),start=c(2014),frequency=365.25)
 data.ts = ts.union(temp.ts,wind.ts)
@@ -31,20 +16,16 @@ plot(wind.ts, type="l",main="Wind",ylab="Wind")
 hist(wind.ts, main="Distribution of values",xlab="Wind")
 acf(wind.ts, main="ACF plot for Wind")  
 pacf(wind.ts, main="PACF plot for Wind")
-```
-Looking at the data we see clear annual seasonality. To account for that we difference the data. There is also variable variance in data with time. To account for this the log of the data will be taken
 
-```{r}
+# Difference data
 dtemp=diff(temp.ts, lag=365)
 dwind=diff(wind.ts,lag = 365)
 data.ts=ts.union(dtemp,dwind)
 plot(data.ts, type="l",main="")
 acf(data.ts)
 pacf(data.ts)
-```
-Now that we have stationary data, we now dicide it into training and testing to try different models
 
-```{r}
+# Train test split
 data=data.ts
 n = nrow(data)
 data.train=data[1:(n-114),]
@@ -53,36 +34,28 @@ temp_train=ts(dtemp[1:(n-114)],start=c(2014),frequency=365.25)
 wind_train=ts(dwind[1:(n-114)],start=c(2014),frequency=365.25)
 temp_test=ts(dtemp[(n-113):n],start=c(2019),frequency=365.25)
 wind_test=ts(dwind[(n-113):n],start=c(2019),frequency=365.25)
-```
 
-
-We now try to fit an ARIMA model to temperature. We do model selection based on AIC
-
-```{r eval=FALSE, include=FALSE}
-#### Univariate ARIMA model
+# Univariate ARIMA model
 
 final.aic = Inf
 final.order = c(0,0,0)
 for (p in 11:13) for (d in 0:2) for (q in 7:9) {
   #print(c(p, d, q))
-   current.aic = AIC(arima(temp_train, order=c(p, d, q), method="ML"))
-   if (current.aic < final.aic) {
-     final.aic = current.aic
-     final.order = c(p, d, q)
-     
-   }
- }
-final.order
-# [1] 12  1  8
-```
+  current.aic = AIC(arima(temp_train, order=c(p, d, q), method="ML"))
+  if (current.aic < final.aic) {
+    final.aic = current.aic
+    final.order = c(p, d, q)
+    
+  }
+}
+print(final.order)
+# final order: 12  1  8
 
-
-```{r}
 model.arima = arima(temp_train, order=final.order, method="ML")
 summary(model.arima)
-```
-```{r}
-## Residual analysis
+
+# Residual analysis
+
 par(mfrow=c(2,2))
 plot(resid(model.arima), ylab='Residuals',type='o',main="Residual Plot")
 abline(h=0)
@@ -90,11 +63,7 @@ acf(resid(model.arima),main="ACF: Residuals")
 hist(resid(model.arima),xlab='Residuals',main='Histogram: Residuals')
 qqnorm(resid(model.arima),ylab="Sample Q",xlab="Theoretical Q")
 qqline(resid(model.arima))
-```
 
-
-
-```{r}
 fore = forecast(model.arima,h=114)
 fore=as.data.frame(fore)
 point.fore = ts(fore[,1],start=c(2019),frequency=365.25)
@@ -107,18 +76,13 @@ points(point.fore,lwd=2,col="red")
 lines(lo.fore,lty=3,lwd= 2, col="blue")
 lines(up.fore,lty=3,lwd= 2, col="blue")
 legend("topleft",c("Actual value","Estimated value","95% interval"), bty="n", lwd=c(1,2,2), col=c("black","red","blue"))
-```
 
-```{r}
+# VAR model
+
 VARselect(data.train, lag.max = 20,type="both")$selection
-```
-
-```{r}
 model.var=VAR(data.train, p=8,type="both")
 summary(model.var)
-```
 
-```{r}
 pred = predict(model.var, n.ahead=114, ci=0.95)[[1]]$dtemp
 point.pred = ts(pred[,1],start=2019, freq=365.25)
 lo.pred = ts(pred[,2],start=2019, freq=365.25)
@@ -129,5 +93,4 @@ points(point.pred,lwd=2,col="red")
 lines(lo.pred,lty=3,lwd= 2, col="blue")
 lines(up.pred,lty=3,lwd= 2, col="blue")
 legend("topleft",c("Actual value","Estimated value","95% interval"), bty="n", lwd=c(1,2,2), col=c("black","red","blue"))
-```
 
